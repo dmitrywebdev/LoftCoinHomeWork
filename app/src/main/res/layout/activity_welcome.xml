@@ -21,12 +21,12 @@
         android:id="@+id/btn_start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        style="?attr/buttonWelcome"
         android:layout_marginBottom="80dp"
         android:text="@string/start_working"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintBottom_toBottomOf="parent"
+        style="?attr/buttonWelcome"/>
 
     
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -7,12 +7,14 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.dkoptin.loftcoin.R;
 import com.dkoptin.loftcoin.databinding.LiWalletBinding;
 
 import org.jetbrains.annotations.NotNull;
 
 public class WalletsAdapter extends RecyclerView.Adapter<WalletsAdapter.ViewHolder> {
 
+    private static final int [] WALLETS = {R.layout.li_wallet,R.layout.li_wallet,R.layout.li_wallet};
 
     private LayoutInflater inflater;
 
@@ -29,7 +31,7 @@ public class WalletsAdapter extends RecyclerView.Adapter<WalletsAdapter.ViewHold
 
     @Override
     public int getItemCount() {
-        return 10;
+        return WALLETS.length;
     }
 
     @Override

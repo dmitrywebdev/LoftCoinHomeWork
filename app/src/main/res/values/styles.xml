@@ -15,6 +15,7 @@
         <item name="textAppearanceHeadline2">@style/TextAppearance.AppTheme.H2</item>
         <item name="textAppearanceHeadline3">@style/TextAppearance.AppTheme.H3</item>
         <item name="textAppearanceHeadline4">@style/TextAppearance.AppTheme.H4</item>
+        <item name="textAppearanceHeadline5">@style/TextAppearance.AppTheme.H5</item>
 
         <item name="bottomNavigationStyle">@style/AppTheme.BottomNavigationView</item>
 
@@ -74,6 +75,9 @@
         <item name="android:textSize">14sp</item>
     </style>
 
+    <style name="TextAppearance.AppTheme.H5">
+        <item name="android:textSize">12sp</item>
+    </style>
 
     <attr name="walletCardBackground" format="color|reference" />
     <attr name="walletCardWidth" format="dimension|reference" />
