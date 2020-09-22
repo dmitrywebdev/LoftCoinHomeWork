@@ -11,4 +11,6 @@
     <string name="wallets">Wallets</string>
     <string name="rates">Rates</string>
     <string name="converter">Converter</string>
+    <string name="currency_selection">Currency selection</string>
+    <string name="sort">Sort</string>
 </resources>

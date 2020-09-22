@@ -2,12 +2,16 @@ package com.dkoptin.loftcoin.ui.rates;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.dkoptin.loftcoin.R;
@@ -16,16 +20,21 @@ import com.dkoptin.loftcoin.databinding.FragmentRatesBinding;
 
 import java.util.List;
 
-public class RatesFragment extends Fragment implements RatesView {
+import timber.log.Timber;
+
+public class RatesFragment extends Fragment {
 
     private FragmentRatesBinding binding;
 
-    private RatesPresenter presenter;
+    private RatesAdapter adapter;
+
+    private RatesViewModel viewModel;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        presenter = new RatesPresenter();
+        viewModel = new ViewModelProvider(this).get(RatesViewModel.class);
+        adapter = new RatesAdapter();
     }
 
     @Nullable
@@ -37,25 +46,31 @@ public class RatesFragment extends Fragment implements RatesView {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        setHasOptionsMenu(true);
         binding = FragmentRatesBinding.bind(view);
         binding.recycler.setLayoutManager(new LinearLayoutManager(view.getContext()));
+        binding.recycler.swapAdapter(adapter, false);
         binding.recycler.setHasFixedSize(true);
-        presenter.attach(this);
+        viewModel.coins().observe(getViewLifecycleOwner(), (coins) -> {
+            adapter.submitList(coins);
+        });
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.rates, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        Timber.d("%s", item);
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onDestroyView() {
-        presenter.detach(this);
+        binding.recycler.swapAdapter(null, false);
         super.onDestroyView();
-    }
-
-    @Override
-    public void showCoins(@NonNull List<? extends Coin> coins) {
-        binding.recycler.setAdapter(new RatesAdapter(coins));
-    }
-
-    @Override
-    public void showError(@NonNull String error) {
-
     }
 }

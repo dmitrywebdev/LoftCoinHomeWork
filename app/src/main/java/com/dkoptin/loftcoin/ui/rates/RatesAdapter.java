@@ -5,43 +5,51 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dkoptin.loftcoin.data.Coin;
 import com.dkoptin.loftcoin.databinding.LiRateBinding;
 
-import java.util.List;
+import java.text.NumberFormat;
+import java.util.Objects;
 
-public class RatesAdapter extends RecyclerView.Adapter<RatesAdapter.ViewHolder> {
+public class RatesAdapter extends ListAdapter<Coin, RatesAdapter.ViewHolder> {
 
     private LayoutInflater inflater;
 
-    private final List<? extends Coin> coins;
 
-    public RatesAdapter(List<? extends Coin> coins) {
+
+    RatesAdapter() {
+        super(new DiffUtil.ItemCallback<Coin>() {
+            @Override
+            public boolean areItemsTheSame(@NonNull Coin oldItem, @NonNull Coin newItem) {
+                return oldItem.id() == newItem.id();
+            }
+
+            @Override
+            public boolean areContentsTheSame(@NonNull Coin oldItem, @NonNull Coin newItem) {
+                return Objects.equals(oldItem, newItem);
+            }
+        });
         setHasStableIds(true);
-        this.coins = coins;
     }
 
     @Override
     public long getItemId(int position) {
-        return coins.get(position).id();
+        return getItem(position).id();
     }
 
     @NonNull
     @Override
-    public RatesAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         return new ViewHolder(LiRateBinding.inflate(inflater, parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RatesAdapter.ViewHolder holder, int position) {
-        holder.bind(coins.get(position));
-    }
-
-    @Override
-    public int getItemCount() {
-        return coins.size();
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        holder.binding.symbol.setText(getItem(position).symbol());
     }
 
     @Override
@@ -52,16 +60,11 @@ public class RatesAdapter extends RecyclerView.Adapter<RatesAdapter.ViewHolder> 
 
     static class ViewHolder extends RecyclerView.ViewHolder {
 
-        private LiRateBinding binding;
+        private final LiRateBinding binding;
 
         public ViewHolder(@NonNull LiRateBinding binding) {
             super(binding.getRoot());
             this.binding = binding;
-        }
-
-        void bind(Coin coin) {
-            binding.symbol.setText(coin.symbol());
-
         }
     }
 }

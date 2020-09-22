@@ -47,6 +47,11 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui:2.3.0'
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
+    implementation "androidx.lifecycle:lifecycle-common-java8:2.2.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.2.0"
+    implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
+    implementation "androidx.lifecycle:lifecycle-livedata:2.2.0"
+
     compileOnly "com.google.auto.value:auto-value-annotations:1.7"
     annotationProcessor "com.google.auto.value:auto-value:1.7"
 
