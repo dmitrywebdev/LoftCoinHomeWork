@@ -13,4 +13,8 @@
     <string name="converter">Converter</string>
     <string name="currency_selection">Currency selection</string>
     <string name="sort">Sort</string>
+
+    <string name="usd">Dollar</string>
+    <string name="eur">Euro</string>
+    <string name="rub">Ruble</string>
 </resources>

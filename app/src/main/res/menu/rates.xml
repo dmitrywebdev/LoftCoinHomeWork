@@ -5,7 +5,7 @@
     tools:ignore="AlwaysShowAction">
 
     <item
-        android:id="@+id/currency"
+        android:id="@+id/currency_dialog"
         android:icon="@drawable/ic_currency_24dp"
         android:title="@string/currency_selection"
         app:showAsAction="always" />

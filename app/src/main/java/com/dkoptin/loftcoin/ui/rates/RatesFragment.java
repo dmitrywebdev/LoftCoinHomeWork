@@ -12,12 +12,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.dkoptin.loftcoin.R;
 import com.dkoptin.loftcoin.data.Coin;
 import com.dkoptin.loftcoin.databinding.FragmentRatesBinding;
+import com.dkoptin.loftcoin.util.ChangeFormatter;
+import com.dkoptin.loftcoin.util.PriceFormatter;
 
+import java.util.Formatter;
 import java.util.List;
 
 import timber.log.Timber;
@@ -34,7 +38,7 @@ public class RatesFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         viewModel = new ViewModelProvider(this).get(RatesViewModel.class);
-        adapter = new RatesAdapter();
+        adapter = new RatesAdapter(new PriceFormatter(), new ChangeFormatter());
     }
 
     @Nullable
@@ -51,9 +55,8 @@ public class RatesFragment extends Fragment {
         binding.recycler.setLayoutManager(new LinearLayoutManager(view.getContext()));
         binding.recycler.swapAdapter(adapter, false);
         binding.recycler.setHasFixedSize(true);
-        viewModel.coins().observe(getViewLifecycleOwner(), (coins) -> {
-            adapter.submitList(coins);
-        });
+        viewModel.coins().observe(getViewLifecycleOwner(), adapter::submitList);
+        viewModel.isRefreshing().observe(getViewLifecycleOwner(), binding.refresher::setRefreshing);
     }
 
     @Override
@@ -64,7 +67,12 @@ public class RatesFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        Timber.d("%s", item);
+        if (R.id.currency_dialog == item.getItemId()) {
+            NavHostFragment
+                    .findNavController(this)
+                    .navigate(R.id.currency_dialog);
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
