@@ -1,76 +1,90 @@
 package com.dkoptin.loftcoin.data;
 
 import androidx.annotation.NonNull;
-
-import com.dkoptin.loftcoin.BuildConfig;
-import com.squareup.moshi.Moshi;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import okhttp3.ResponseBody;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.moshi.MoshiConverterFactory;
+import timber.log.Timber;
 
-public class CmcCoinsRepo implements CoinsRepo {
+@Singleton
+class CmcCoinsRepo implements CoinsRepo {
 
     private final CmcApi api;
 
-    public CmcCoinsRepo() {
-        api = createRetrofit(createHttpClient()).create(CmcApi.class);
+    private final LoftDatabase db;
+
+    private final ExecutorService executor;
+
+    @Inject
+    public CmcCoinsRepo(CmcApi api, LoftDatabase db, ExecutorService executor) {
+        this.api = api;
+        this.db = db;
+        this.executor = executor;
     }
 
     @NonNull
     @Override
-    public List<? extends Coin> listings(@NonNull String currency) throws IOException {
-        Response<Listings> response = api.listings(currency).execute();
-        if (response.isSuccessful()) {
-            final Listings listings = response.body();
-            if (listings != null) {
-                return listings.data();
-            }
-        } else {
-            ResponseBody responseBody = response.errorBody();
-            if (responseBody != null) {
-                throw new IOException(responseBody.string());
-            }
-        }
-        return Collections.emptyList();
-    }
-
-    private OkHttpClient createHttpClient() {
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.addInterceptor(chain -> {
-            Request request = chain.request();
-            return chain.proceed(request.newBuilder()
-                    .addHeader(CmcApi.API_KEY, BuildConfig.API_KEY)
-                    .build());
+    public LiveData<List<Coin>> listings(@NonNull Query query) {
+        MutableLiveData<Boolean> refresh = new MutableLiveData<>();
+        executor.submit(() -> refresh.postValue(query.forceUpdate() || db.coins().coinsCount() == 0));
+         return Transformations.switchMap(refresh, (r) -> {
+           if (r) return fetchFromNetwork(query);
+           else return fetchFromDb(query);
         });
-        if (BuildConfig.DEBUG) {
-            HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-            interceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-            interceptor.redactHeader(CmcApi.API_KEY);
-            builder.addInterceptor(interceptor);
-        }
-        return builder.build();
     }
 
-    private Retrofit createRetrofit(OkHttpClient httpClient) {
-        Retrofit.Builder builder = new Retrofit.Builder();
-        builder.client(httpClient);
-        builder.baseUrl(BuildConfig.API_ENDPOINT);
-        Moshi moshi = new Moshi.Builder().build();
-        builder.addConverterFactory(MoshiConverterFactory.create(
-                moshi.newBuilder()
-                    .add(Coin.class, moshi.adapter(AutoValue_Coin.class))
-                    .add(Listings.class, moshi.adapter(AutoValue_Listings.class))
-                    .build()
-        ));
-        return builder.build();
+    private LiveData<List<Coin>> fetchFromDb(Query query) {
+        return Transformations.map(db.coins().fetchAll(), ArrayList::new);
+    }
+
+    private LiveData<List<Coin>> fetchFromNetwork(Query query) {
+        MutableLiveData<List<Coin>> liveData = new MutableLiveData<>();
+        executor.submit(() -> {
+            try {
+                Response<Listings> response = api.listings(query.currency()).execute();
+                if (response.isSuccessful()) {
+                    final Listings listings = response.body();
+                    if (listings != null) {
+                        List<AutoValue_CmcCoin> cmcCoins = listings.data();
+                        saveCoinsIntoDb(cmcCoins);
+                        liveData.postValue(new ArrayList<>(cmcCoins));
+                    }
+                } else {
+                    ResponseBody responseBody = response.errorBody();
+                    if (responseBody != null) {
+                        throw new IOException(responseBody.string());
+                }
+            }
+            } catch (IOException e) {
+                Timber.e(e);
+            }
+        });
+        return liveData;
+    }
+
+    private void saveCoinsIntoDb(List<? extends Coin> coins) {
+        List<RoomCoin> roomCoins = new ArrayList<>(coins.size());
+        for (Coin coin : coins) {
+            roomCoins.add(RoomCoin.create(
+                    coin.name(),
+                    coin.symbol(),
+                    coin.rank(),
+                    coin.price(),
+                    coin.change24h(),
+                    coin.id()
+            ));
+        }
+        db.coins().insert(roomCoins);
     }
 }

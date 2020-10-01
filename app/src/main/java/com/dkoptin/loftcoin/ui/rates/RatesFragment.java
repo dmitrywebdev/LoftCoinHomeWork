@@ -11,22 +11,22 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.dkoptin.loftcoin.BaseComponent;
 import com.dkoptin.loftcoin.R;
-import com.dkoptin.loftcoin.data.Coin;
 import com.dkoptin.loftcoin.databinding.FragmentRatesBinding;
 import com.dkoptin.loftcoin.util.ChangeFormatter;
 import com.dkoptin.loftcoin.util.PriceFormatter;
 
-import java.util.Formatter;
-import java.util.List;
-
-import timber.log.Timber;
+import javax.inject.Inject;
 
 public class RatesFragment extends Fragment {
+
+    private final RatesComponent component;
 
     private FragmentRatesBinding binding;
 
@@ -34,10 +34,18 @@ public class RatesFragment extends Fragment {
 
     private RatesViewModel viewModel;
 
+    @Inject
+    public RatesFragment(BaseComponent baseComponent) {
+        component = DaggerRatesComponent.builder()
+                .baseComponent(baseComponent)
+                .build();
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(RatesViewModel.class);
+        viewModel = new ViewModelProvider(this, component.viewModelFactory())
+                .get(RatesViewModel.class);
         adapter = new RatesAdapter(new PriceFormatter(), new ChangeFormatter());
     }
 
@@ -55,6 +63,7 @@ public class RatesFragment extends Fragment {
         binding.recycler.setLayoutManager(new LinearLayoutManager(view.getContext()));
         binding.recycler.swapAdapter(adapter, false);
         binding.recycler.setHasFixedSize(true);
+        binding.refresher.setOnRefreshListener(viewModel::refresh);
         viewModel.coins().observe(getViewLifecycleOwner(), adapter::submitList);
         viewModel.isRefreshing().observe(getViewLifecycleOwner(), binding.refresher::setRefreshing);
     }

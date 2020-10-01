@@ -26,6 +26,8 @@ import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Objects;
 
+import javax.inject.Inject;
+
 public class RatesAdapter extends ListAdapter<Coin, RatesAdapter.ViewHolder> {
 
     private LayoutInflater inflater;
@@ -42,6 +44,7 @@ public class RatesAdapter extends ListAdapter<Coin, RatesAdapter.ViewHolder> {
 
     private Formatter<Double> changeFormatter;
 
+    @Inject
     RatesAdapter(Formatter<Double> priceFormatter, Formatter<Double> changeFormatter) {
         super(new DiffUtil.ItemCallback<Coin>() {
             @Override
