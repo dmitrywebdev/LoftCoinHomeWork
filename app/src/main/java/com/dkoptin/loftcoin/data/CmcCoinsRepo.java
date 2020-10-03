@@ -2,7 +2,6 @@ package com.dkoptin.loftcoin.data;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 
 import java.io.IOException;
@@ -36,44 +35,44 @@ class CmcCoinsRepo implements CoinsRepo {
     @NonNull
     @Override
     public LiveData<List<Coin>> listings(@NonNull Query query) {
-        MutableLiveData<Boolean> refresh = new MutableLiveData<>();
-        executor.submit(() -> refresh.postValue(query.forceUpdate() || db.coins().coinsCount() == 0));
-         return Transformations.switchMap(refresh, (r) -> {
-           if (r) return fetchFromNetwork(query);
-           else return fetchFromDb(query);
-        });
+        fetchFromNetworkIfNecessary(query);
+        return fetchFromDb(query);
     }
 
     private LiveData<List<Coin>> fetchFromDb(Query query) {
-        return Transformations.map(db.coins().fetchAll(), ArrayList::new);
+        LiveData<List<RoomCoin>> coins;
+        if (query.sortBy() == SortBy.PRICE) {
+            coins = db.coins().fetchAllSortByPrice();
+        } else {
+            coins = db.coins().fetchAllSortByRank();
+        }
+        return Transformations.map(coins, ArrayList::new);
     }
 
-    private LiveData<List<Coin>> fetchFromNetwork(Query query) {
-        MutableLiveData<List<Coin>> liveData = new MutableLiveData<>();
+    private void fetchFromNetworkIfNecessary(Query query) {
         executor.submit(() -> {
-            try {
-                Response<Listings> response = api.listings(query.currency()).execute();
-                if (response.isSuccessful()) {
-                    final Listings listings = response.body();
-                    if (listings != null) {
-                        List<AutoValue_CmcCoin> cmcCoins = listings.data();
-                        saveCoinsIntoDb(cmcCoins);
-                        liveData.postValue(new ArrayList<>(cmcCoins));
+            if (query.forceUpdate() || db.coins().coinsCount() == 0) {
+                try {
+                    Response<Listings> response = api.listings(query.currency()).execute();
+                    if (response.isSuccessful()) {
+                        final Listings listings = response.body();
+                        if (listings != null) {
+                            saveCoinsIntoDb(query, listings.data());
+                        }
+                    } else {
+                        ResponseBody responseBody = response.errorBody();
+                        if (responseBody != null) {
+                            throw new IOException(responseBody.string());
+                        }
                     }
-                } else {
-                    ResponseBody responseBody = response.errorBody();
-                    if (responseBody != null) {
-                        throw new IOException(responseBody.string());
+                } catch (IOException e) {
+                    Timber.e(e);
                 }
             }
-            } catch (IOException e) {
-                Timber.e(e);
-            }
         });
-        return liveData;
     }
 
-    private void saveCoinsIntoDb(List<? extends Coin> coins) {
+    private void saveCoinsIntoDb(Query query, List<? extends Coin> coins) {
         List<RoomCoin> roomCoins = new ArrayList<>(coins.size());
         for (Coin coin : coins) {
             roomCoins.add(RoomCoin.create(
@@ -82,6 +81,7 @@ class CmcCoinsRepo implements CoinsRepo {
                     coin.rank(),
                     coin.price(),
                     coin.change24h(),
+                    query.currency(),
                     coin.id()
             ));
         }

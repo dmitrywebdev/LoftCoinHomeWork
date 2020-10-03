@@ -46,7 +46,7 @@ public class RatesFragment extends Fragment {
         super.onCreate(savedInstanceState);
         viewModel = new ViewModelProvider(this, component.viewModelFactory())
                 .get(RatesViewModel.class);
-        adapter = new RatesAdapter(new PriceFormatter(), new ChangeFormatter());
+        adapter = component.ratesAdapter();
     }
 
     @Nullable
@@ -80,6 +80,9 @@ public class RatesFragment extends Fragment {
             NavHostFragment
                     .findNavController(this)
                     .navigate(R.id.currency_dialog);
+            return true;
+        } else if (R.id.sort_dialog == item.getItemId()) {
+            viewModel.switchSortingOrder();
             return true;
         }
         return super.onOptionsItemSelected(item);

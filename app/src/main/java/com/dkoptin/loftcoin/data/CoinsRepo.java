@@ -24,13 +24,18 @@ public interface CoinsRepo {
         }
 
         abstract String currency();
+
         abstract boolean forceUpdate();
+
+        abstract SortBy sortBy();
 
         @AutoValue.Builder
         public abstract static class Builder {
             public abstract Builder currency(String currency);
 
             public abstract Builder forceUpdate(boolean forceUpdate);
+
+            public abstract Builder sortBy(SortBy sortBy);
 
             public abstract Query build();
         }

@@ -11,7 +11,7 @@
         app:showAsAction="always" />
 
     <item
-        android:id="@+id/sort"
+        android:id="@+id/sort_dialog"
         android:icon="@drawable/ic_sort_24dp"
         android:title="@string/sort"
         app:showAsAction="always"/>
